@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENERGY SPORTS - Phần mềm Quản lý Bán hàng Dụng cụ Thể thao</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/print-k80.css">
+  <!-- Chart.js for Revenue & Financial Visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Header & Navbar -->
+  <header class="navbar" id="app-navbar" style="display: none;">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-text">ENERGY <span>SPORTS</span></div>
+    </div>
+
+    <nav>
+      <ul class="nav-links" id="main-nav-links">
+        <li><a class="nav-link active" data-view="dashboard">📊 Tổng quan</a></li>
+        <li><a class="nav-link" data-view="pos">🛒 Bán hàng POS</a></li>
+        <li><a class="nav-link" data-view="returns">🔄 Đổi trả (QD02)</a></li>
+        <li><a class="nav-link" data-view="products">📦 Kho & Sản phẩm</a></li>
+        <li><a class="nav-link" data-view="inventory">📥 Nhập kho (QD05)</a></li>
+        <li><a class="nav-link" data-view="stock-check">📝 Kiểm kê (QD03)</a></li>
+        <li><a class="nav-link" data-view="cod">🚚 Giao hàng COD (QD04)</a></li>
+        <li><a class="nav-link" data-view="customers">👥 Khách & Voucher</a></li>
+        <li><a class="nav-link" data-view="reports">📈 Báo cáo (BM06)</a></li>
+        <li><a class="nav-link" data-view="admin">⚙️ Quản trị RBAC</a></li>
+      </ul>
+    </nav>
+
+    <div class="user-section">
+      <span class="role-badge" id="nav-user-role">Giám đốc</span>
+      <span id="nav-user-name" style="font-weight: 600; font-size: 0.9rem;">Admin</span>
+      <button class="btn-logout" id="btn-logout" onclick="App.logout()">Đăng xuất</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Demo Role Switcher Toolbar (Hỗ trợ Hội đồng Giảng viên & Nhóm kiểm thử chức năng nhanh chóng) -->
+    <div class="demo-switcher" id="demo-switcher" style="display: none;">
+      <div>
+        <strong>⚡ Chuyển đổi nhanh vai trò kiểm thử:</strong>
+        <span style="color: var(--text-muted); font-size: 0.8rem;">(Nhấn để thử nghiệm phân quyền theo đúng đề bài)</span>
+      </div>
+      <div class="demo-buttons">
+        <button class="btn-demo" onclick="App.quickLogin('giamdoc', '123456')">👑 Giám đốc (Full quyền)</button>
+        <button class="btn-demo" onclick="App.quickLogin('thungan', '123456')">💵 Thu ngân (Bán hàng, Đổi trả)</button>
+        <button class="btn-demo" onclick="App.quickLogin('thukho', '123456')">📦 Thủ kho (Nhập kho, Kiểm kê)</button>
+        <button class="btn-demo" onclick="App.quickLogin('ketoan', '123456')">📑 Kế toán (Đối soát COD, Báo cáo)</button>
+        <button class="btn-demo" onclick="App.quickLogin('admin', '123456')">🛠️ Admin (Cấu hình, Nhật ký)</button>
+      </div>
+    </div>
+
+    <!-- VIEW 0: MÀN HÌNH ĐĂNG NHẬP -->
+    <section id="view-login" class="card" style="max-width: 440px; margin: 4rem auto; padding: 2rem;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-icon" style="width: 54px; height: 54px; margin: 0 auto 0.75rem; font-size: 1.8rem;">⚡</div>
+        <h2 style="font-weight: 900; letter-spacing: 0.5px; color: var(--secondary);">ENERGY SPORTS POS</h2>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">Hệ thống Quản lý Bán hàng Dụng cụ Thể thao</p>
+        <div style="margin-top: 0.5rem; font-size: 0.78rem; color: var(--primary); font-weight: 600;">ĐH Sư Phạm TP.HCM - Khoa CNTT</div>
+      </div>
+
+      <form id="login-form" onsubmit="App.handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Tên đăng nhập</label>
+          <input type="text" id="login-username" class="form-control" placeholder="Nhập tên đăng nhập..." required value="giamdoc">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <input type="password" id="login-password" class="form-control" placeholder="Nhập mật khẩu..." required value="123456">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem; padding: 0.65rem;">
+          Đăng nhập hệ thống
+        </button>
+      </form>
+
+      <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border); font-size: 0.8rem; color: var(--text-muted);">
+        <strong>Tài khoản mặc định (mật khẩu: 123456):</strong>
+        <ul style="margin: 0.4rem 0 0 1.2rem; line-height: 1.5;">
+          <li><code>giamdoc</code>: Giám đốc (Duyệt nhập kho > 20M, Báo cáo)</li>
+          <li><code>thungan</code>: Thu ngân (Bán hàng, Đổi trả, In K80)</li>
+          <li><code>thukho</code>: Thủ kho (Quản lý kho, Nhập hàng, Kiểm kê)</li>
+          <li><code>ketoan</code>: Kế toán (Đối soát COD, Báo cáo tài chính)</li>
+          <li><code>admin</code>: Quản trị viên (Phân quyền, Audit log, Backup)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- VIEW 1: MÀN HÌNH TỔNG QUAN (DASHBOARD) -->
+    <section id="view-dashboard" style="display: none;">
+      <!-- KPI Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green">💰</div>
+          <div class="stat-info">
+            <div class="stat-value" id="dash-today-revenue">0 đ</div>
+            <div class="stat-label">Doanh thu hôm nay</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🧾</div>
+          <div class="stat-info">
+            <div class="stat-value" id="dash-today-orders">0</div>
+            <div class="stat-label">Hóa đơn bán trong ngày</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">💎</div>
+          <div class="stat-info">
+            <div class="stat-value" id="dash-gross-profit">0 đ</div>
+            <div class="stat-label">Lợi nhuận gộp ước tính</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">🚚</div>
+          <div class="stat-info">
+            <div class="stat-value" id="dash-cod-pending">0</div>
+            <div class="stat-label">Đơn COD chờ đối soát</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">⚠️</div>
+          <div class="stat-info">
+            <div class="stat-value" id="dash-low-stock">0</div>
+            <div class="stat-label">Sản phẩm sắp hết hàng (≤5)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Panels -->
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📈 Biểu đồ Doanh thu & Lợi nhuận gộp</div>
+            <span class="badge badge-info">30 ngày gần nhất</span>
+          </div>
+          <div style="height: 280px;">
+            <canvas id="dashboardRevenueChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔔 Thông báo & Phê duyệt</div>
+          </div>
+          <div id="dash-notifications" style="font-size: 0.88rem; line-height: 1.6;">
+            <p style="color: var(--text-muted);">Đang kiểm tra trạng thái phê duyệt...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: MÀN HÌNH BÁN HÀNG POS (BM01, QD01, QD02) -->
+    <section id="view-pos" style="display: none;">
+      <div class="pos-container">
+        <!-- Cột trái: Danh mục & Tìm kiếm sản phẩm -->
+        <div class="pos-catalog">
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.85rem;">
+            <input type="text" id="pos-search-input" class="form-control" placeholder="🔍 Tìm tên sản phẩm, mã vạch (F2)..." oninput="POS.handleSearch(this.value)">
+            <select id="pos-category-filter" class="form-control" style="max-width: 200px;" onchange="POS.filterCategory(this.value)">
+              <option value="">Tất cả danh mục</option>
+            </select>
+          </div>
+
+          <div style="background: #f1f5f9; padding: 0.4rem 0.75rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 0.75rem; color: #475569;">
+            💡 <strong>Quy định QD01 tự động:</strong> Mua &lt; 10 cái áp dụng <strong>Giá bán lẻ</strong>; Mua ≥ 10 cái hệ thống tự động kích hoạt <strong>Giá bán sỉ</strong> ưu đãi!
+          </div>
+
+          <!-- Product Grid -->
+          <div class="product-grid" id="pos-product-grid">
+            <!-- Rendered by pos.js -->
+          </div>
+        </div>
+
+        <!-- Cột phải: Giỏ hàng & Thanh toán -->
+        <div class="pos-cart">
+          <div class="card-title" style="margin-bottom: 0.75rem; justify-content: space-between;">
+            <span>🛒 Hóa đơn bán hàng</span>
+            <button class="btn btn-secondary btn-sm" onclick="POS.clearCart()">Xóa giỏ</button>
+          </div>
+
+          <!-- Chọn Khách hàng & Tích điểm -->
+          <div style="margin-bottom: 0.75rem;">
+            <div style="display: flex; gap: 0.4rem;">
+              <input type="text" id="pos-customer-phone" class="form-control" placeholder="SĐT khách hàng tích điểm..." onchange="POS.lookupCustomer(this.value)">
+              <button class="btn btn-secondary btn-sm" onclick="POS.openCustomerModal()">+ Thêm KH</button>
+            </div>
+            <div id="pos-customer-info" style="font-size: 0.8rem; color: var(--success); font-weight: 600; margin-top: 0.3rem; display: none;"></div>
+          </div>
+
+          <!-- Danh sách mặt hàng trong giỏ -->
+          <div class="cart-items-scroll">
+            <table class="table" style="font-size: 0.82rem;">
+              <thead>
+                <tr>
+                  <th>Sản phẩm</th>
+                  <th style="width: 70px;">SL</th>
+                  <th>Đơn giá</th>
+                  <th>Thành tiền</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="pos-cart-tbody">
+                <!-- Rendered by pos.js -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Khuyến mãi voucher -->
+          <div style="display: flex; gap: 0.4rem; margin-bottom: 0.75rem;">
+            <input type="text" id="pos-voucher-code" class="form-control" placeholder="Mã giảm giá (VD: ENERGY10)..." style="text-transform: uppercase;">
+            <button class="btn btn-secondary btn-sm" onclick="POS.applyVoucher()">Áp dụng</button>
+          </div>
+
+          <!-- Tóm tắt thanh toán -->
+          <div class="cart-summary">
+            <div class="summary-line">
+              <span>Tổng tiền hàng:</span>
+              <span id="pos-subtotal">0 đ</span>
+            </div>
+            <div class="summary-line" style="color: var(--accent);">
+              <span>Giảm giá khuyến mãi:</span>
+              <span id="pos-discount">-0 đ</span>
+            </div>
+            <div class="summary-line" style="color: var(--success); font-weight: 600;">
+              <span>Điểm thưởng tích lũy (+1% QD02):</span>
+              <span id="pos-points">+0 điểm</span>
+            </div>
+            <div class="summary-line total">
+              <span>TỔNG THANH TOÁN:</span>
+              <span id="pos-total">0 đ</span>
+            </div>
+          </div>
+
+          <!-- Hình thức & Tiền khách đưa -->
+          <div class="form-group">
+            <label class="form-label">Hình thức thanh toán</label>
+            <select id="pos-payment-method" class="form-control" onchange="POS.changePaymentMethod(this.value)">
+              <option value="Tiền mặt">💵 Tiền mặt tại quầy</option>
+              <option value="Chuyển khoản">💳 Chuyển khoản ngân hàng (QR)</option>
+              <option value="COD">🚚 Giao hàng COD thu hộ</option>
+            </select>
+          </div>
+
+          <div id="pos-cash-section">
+            <div class="form-group">
+              <label class="form-label">Tiền khách đưa</label>
+              <input type="number" id="pos-cash-given" class="form-control" placeholder="Nhập số tiền khách đưa..." oninput="POS.calcChange()">
+            </div>
+            <div class="summary-line" style="font-weight: 700; margin-bottom: 0.75rem;">
+              <span>Tiền thối lại:</span>
+              <span id="pos-change" style="color: var(--primary);">0 đ</span>
+            </div>
+          </div>
+
+          <div id="pos-cod-section" style="display: none; background: #fff7ed; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.75rem;">
+            <div class="form-group" style="margin-bottom: 0.4rem;">
+              <label class="form-label" style="font-size: 0.8rem;">Địa chỉ giao hàng</label>
+              <input type="text" id="pos-cod-address" class="form-control" placeholder="Số nhà, đường, quận/huyện...">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.8rem;">Đơn vị vận chuyển</label>
+              <select id="pos-cod-carrier" class="form-control">
+                <option value="Giao Hàng Nhanh">Giao Hàng Nhanh (GHN)</option>
+                <option value="Viettel Post">Viettel Post</option>
+                <option value="Giao Hàng Tiết Kiệm">Giao Hàng Tiết Kiệm (GHTK)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Nút thanh toán -->
+          <button class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem;" onclick="POS.checkout()">
+            ⚡ THANH TOÁN & IN HÓA ĐƠN K80 (F4)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: MÀN HÌNH ĐỔI TRẢ HÀNG (QD02) -->
+    <section id="view-returns" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔄 Xử lý Đổi trả Hàng hóa (Quy định QD02)</div>
+        </div>
+
+        <div style="background: #eff6ff; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; color: #1e40af;">
+          📌 <strong>Chính sách đổi trả:</strong> Chấp nhận đổi trả trong vòng <strong>07 ngày</strong> kể từ ngày mua. Sản phẩm sẽ được <strong>tự động hoàn lại vào kho</strong> và điểm tích lũy của đơn hàng sẽ bị <strong>trừ lại tương ứng (1%)</strong>.
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; max-width: 450px; margin-bottom: 1.25rem;">
+          <input type="number" id="return-invoice-id" class="form-control" placeholder="Nhập Mã hóa đơn cần đổi trả (VD: 1, 2)...">
+          <button class="btn btn-primary" onclick="ReturnModule.searchInvoice()">Tìm hóa đơn</button>
+        </div>
+
+        <div id="return-invoice-details" style="display: none;">
+          <div class="card" style="background: #f8fafc;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+              <div>
+                <strong>Hóa đơn:</strong> <span id="ret-inv-id"></span> | 
+                <strong>Ngày lập:</strong> <span id="ret-inv-date"></span> | 
+                <strong>Khách hàng:</strong> <span id="ret-inv-cust"></span>
+              </div>
+              <div id="ret-inv-validity" class="badge badge-success">Trong hạn 7 ngày</div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Sản phẩm</th>
+                    <th>SL Đã mua</th>
+                    <th>Đơn giá mua</th>
+                    <th>Thành tiền</th>
+                    <th style="width: 120px;">SL Đổi trả</th>
+                  </tr>
+                </thead>
+                <tbody id="ret-items-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="form-group" style="margin-top: 1rem;">
+              <label class="form-label">Lý do đổi trả hàng</label>
+              <input type="text" id="ret-reason" class="form-control" placeholder="VD: Khách đổi size giày / lỗi tem nhà sản xuất...">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <div>
+                <strong>Tổng tiền hoàn:</strong> <span id="ret-total-refund" style="color: var(--danger); font-size: 1.1rem; font-weight: bold;">0 đ</span>
+                <span style="margin-left: 1rem; font-size: 0.85rem; color: var(--text-muted);">(Trừ lại <span id="ret-points-deduct">0</span> điểm thưởng)</span>
+              </div>
+              <button class="btn btn-danger" onclick="ReturnModule.submitReturn()">
+                Xác nhận Đổi trả & Hoàn kho
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lịch sử đổi trả -->
+        <div style="margin-top: 1.5rem;">
+          <h4 style="margin-bottom: 0.75rem;">Lịch sử đổi trả gần đây</h4>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mã Đổi trả</th>
+                  <th>Mã Hóa đơn</th>
+                  <th>Nhân viên xử lý</th>
+                  <th>Ngày đổi trả</th>
+                  <th>Lý do</th>
+                  <th>Tổng tiền hoàn</th>
+                  <th>Điểm bị trừ</th>
+                </tr>
+              </thead>
+              <tbody id="ret-history-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: QUẢN LÝ KHO & SẢN PHẨM (YCNV03, BFD 2.1) -->
+    <section id="view-products" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📦 Quản lý Danh mục Dụng cụ Thể thao & Giá bán (QD01)</div>
+          <button class="btn btn-primary" onclick="ProductModule.openAddModal()">+ Thêm sản phẩm mới</button>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <input type="text" id="prod-search" class="form-control" style="max-width: 280px;" placeholder="Tìm theo tên sản phẩm..." oninput="ProductModule.loadProducts()">
+          <select id="prod-filter-cat" class="form-control" style="max-width: 200px;" onchange="ProductModule.loadProducts()">
+            <option value="">Tất cả danh mục</option>
+          </select>
+          <select id="prod-filter-brand" class="form-control" style="max-width: 180px;" onchange="ProductModule.loadProducts()">
+            <option value="">Tất cả thương hiệu</option>
+          </select>
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;">
+            <input type="checkbox" id="prod-filter-low" onchange="ProductModule.loadProducts()">
+            ⚠️ Chỉ hiện hàng sắp hết tồn kho (&le;5)
+          </label>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Tên sản phẩm</th>
+                <th>Danh mục</th>
+                <th>Thương hiệu</th>
+                <th>Giá nhập (Vốn)</th>
+                <th>Giá bán lẻ (&lt;10)</th>
+                <th>Giá bán sỉ (&ge;10)</th>
+                <th>Tồn kho</th>
+                <th>ĐVT</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="prod-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: NHẬP KHO & DUYỆT PHIẾU (BM02, QD03, QD05) -->
+    <section id="view-inventory" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📥 Quản lý Phiếu Nhập Kho từ Nhà Cung Cấp</div>
+          <button class="btn btn-primary" onclick="InventoryModule.openCreateModal()">+ Lập phiếu nhập kho</button>
+        </div>
+
+        <div style="background: #fefce8; border: 1px solid #fef08a; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; color: #854d0e;">
+          ⚖️ <strong>Quy định QD05:</strong> Phiếu nhập có tổng giá trị <strong>vượt hạn mức 20.000.000 VNĐ</strong> sẽ chuyển sang trạng thái <strong>"Chờ Giám đốc duyệt"</strong>. Sau khi Giám đốc phê duyệt thì hệ thống mới chính thức cập nhật tăng tồn kho và giá vốn!
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã phiếu</th>
+                <th>Ngày nhập</th>
+                <th>Nhà cung cấp</th>
+                <th>Thủ kho lập</th>
+                <th>Tổng tiền nhập</th>
+                <th>Trạng thái duyệt (QD05)</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="inv-receipts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 6: KIỂM KÊ KHO (QD03) -->
+    <section id="view-stock-check" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📝 Kiểm kê Kho hàng định kỳ & Báo cáo Lệch kho (QD03)</div>
+          <button class="btn btn-primary" onclick="StockCheckModule.submitCheck()">Lưu kết quả kiểm kê</button>
+        </div>
+
+        <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; color: #991b1b;">
+          ⚠️ <strong>Quy định QD03:</strong> Kiểm kê ghi nhận số lượng thực tế. Nếu tỷ lệ sai lệch <strong>vượt quá 2%</strong> tổng kho thì hệ thống sẽ chuyển sang trạng thái <strong>"Chờ Giám đốc duyệt lệch > 2%"</strong> để xem xét trách nhiệm trước khi cân chỉnh tồn kho.
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã SP</th>
+                <th>Tên sản phẩm</th>
+                <th>Danh mục</th>
+                <th>Số lượng hệ thống</th>
+                <th style="width: 140px;">Số lượng thực tế</th>
+                <th>Chênh lệch</th>
+              </tr>
+            </thead>
+            <tbody id="stock-check-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 7: GIAO HÀNG & ĐỐI SOÁT COD (BM05, QD04) -->
+    <section id="view-cod" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🚚 Giao hàng Online & Đối soát Thu hộ COD (QD04)</div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 1rem;">
+          <div class="stat-card">
+            <div class="stat-icon blue">📦</div>
+            <div class="stat-info">
+              <div class="stat-value" id="cod-stat-shipping">0 đ</div>
+              <div class="stat-label">Tiền COD đang giao</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">⏳</div>
+            <div class="stat-info">
+              <div class="stat-value" id="cod-stat-pending">0 đ</div>
+              <div class="stat-label">Tiền COD chờ đối soát</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-info">
+              <div class="stat-value" id="cod-stat-reconciled">0 đ</div>
+              <div class="stat-label">Tiền COD đã đối soát</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; padding: 0.6rem 0.8rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; color: #334155;">
+          📋 <strong>Quy định QD04:</strong> Cuối ngày, Kế toán đối soát tiền thu hộ COD do đơn vị vận chuyển (GHN, Viettel Post) chuyển về và tiền khách chuyển khoản với danh sách đơn online.
+        </div>
+
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã vận đơn</th>
+                <th>Mã Hóa đơn</th>
+                <th>Đơn vị VC & Tracking</th>
+                <th>Khách hàng</th>
+                <th>Địa chỉ giao</th>
+                <th>Tiền thu hộ (COD)</th>
+                <th>Trạng thái</th>
+                <th>Ngày đối soát</th>
+                <th>Thao tác kế toán</th>
+              </tr>
+            </thead>
+            <tbody id="cod-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 8: KHÁCH HÀNG & VOUCHER KHUYẾN MÃI (BM04) -->
+    <section id="view-customers" style="display: none;">
+      <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 1.25rem;">
+        <!-- Khách hàng -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Sổ Quản lý Khách hàng & Điểm thưởng</div>
+            <button class="btn btn-primary btn-sm" onclick="POS.openCustomerModal()">+ Thêm khách</button>
+          </div>
+          <input type="text" id="cust-search" class="form-control" style="margin-bottom: 0.75rem;" placeholder="Tìm theo tên hoặc SĐT khách..." oninput="CustomerModule.loadCustomers()">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mã KH</th>
+                  <th>Họ tên</th>
+                  <th>Số điện thoại</th>
+                  <th>Email</th>
+                  <th>Điểm tích lũy</th>
+                </tr>
+              </thead>
+              <tbody id="cust-table-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Khuyến mãi -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🎟️ Chương trình Khuyến mãi (QD05)</div>
+            <button class="btn btn-success btn-sm" onclick="CustomerModule.openPromoModal()">+ Tạo mã</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mã Code</th>
+                  <th>Tên chương trình</th>
+                  <th>Giảm (%)</th>
+                  <th>Hạn dùng</th>
+                </tr>
+              </thead>
+              <tbody id="promo-table-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 9: BÁO CÁO DOANH THU & LỢI NHUẬN GỘP (BM06) -->
+    <section id="view-reports" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📈 Báo cáo Doanh thu, Giá vốn & Lợi nhuận Gộp (BM06)</div>
+          <button class="btn btn-secondary" onclick="window.print()">🖨️ In Báo Cáo Doanh Thu</button>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+          <input type="date" id="rep-from-date" class="form-control" style="max-width: 180px;">
+          <input type="date" id="rep-to-date" class="form-control" style="max-width: 180px;">
+          <button class="btn btn-primary" onclick="ReportModule.loadReport()">Lọc dữ liệu</button>
+        </div>
+
+        <div style="height: 300px; margin-bottom: 1.5rem;">
+          <canvas id="detailedRevenueChart"></canvas>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-title" style="margin-bottom: 0.75rem;">🏆 Top 5 Sản Phẩm Bán Chạy Nhất</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tên sản phẩm</th>
+                  <th>ĐVT</th>
+                  <th>Số lượng bán</th>
+                  <th>Doanh thu SP</th>
+                </tr>
+              </thead>
+              <tbody id="rep-top-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-bottom: 0;">
+            <div class="card-title" style="margin-bottom: 0.75rem;">⚠️ Cảnh Báo Tồn Kho Thấp (&le;5)</div>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tên sản phẩm</th>
+                  <th>Danh mục</th>
+                  <th>Tồn kho</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="rep-low-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 10: QUẢN TRỊ HỆ THỐNG & AUDIT TRAIL (YCHT01 - YCHT04) -->
+    <section id="view-admin" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚙️ Quản trị Hệ thống, Phân quyền RBAC & Audit Log</div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+          <button class="btn btn-secondary btn-sm active" onclick="AdminModule.switchTab('users')">👤 Tài khoản nhân viên</button>
+          <button class="btn btn-secondary btn-sm" onclick="AdminModule.switchTab('rbac')">🛡️ Ma trận phân quyền (RBAC)</button>
+          <button class="btn btn-secondary btn-sm" onclick="AdminModule.switchTab('params')">🔧 Tham số hệ thống (THAM_SO)</button>
+          <button class="btn btn-secondary btn-sm" onclick="AdminModule.switchTab('audit')">📜 Nhật ký hoạt động (Audit Trail)</button>
+          <button class="btn btn-secondary btn-sm" onclick="AdminModule.switchTab('backup')">💾 Sao lưu & Phục hồi CSDL</button>
+        </div>
+
+        <!-- Tab 1: Nhan vien -->
+        <div id="admin-tab-users">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h4>Danh sách nhân viên</h4>
+            <button class="btn btn-primary btn-sm" onclick="AdminModule.openAddUserModal()">+ Thêm nhân viên</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Họ tên</th>
+                <th>Tên đăng nhập</th>
+                <th>Số điện thoại</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Tab 2: RBAC -->
+        <div id="admin-tab-rbac" style="display: none;">
+          <h4>Ma trận Phân quyền chức năng theo 5 Vai trò</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Kiểm soát quyền truy cập chi tiết của Giám đốc, Thu ngân, Thủ kho, Kế toán và Admin.
+          </p>
+          <div class="table-responsive">
+            <table class="table">
+              <thead id="admin-rbac-thead"></thead>
+              <tbody id="admin-rbac-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3: Tham so -->
+        <div id="admin-tab-params" style="display: none;">
+          <h4>Cấu hình Tham số Hệ thống (Bảng THAM_SO)</h4>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã tham số</th>
+                <th>Giá trị</th>
+                <th>Mô tả quy định</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="admin-params-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Tab 4: Audit Log -->
+        <div id="admin-tab-audit" style="display: none;">
+          <h4>Nhật ký Hoạt động Hệ thống (Audit Trail)</h4>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Thời gian</th>
+                <th>Nhân viên</th>
+                <th>Hành động</th>
+                <th>Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody id="admin-audit-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Tab 5: Backup & Restore -->
+        <div id="admin-tab-backup" style="display: none;">
+          <h4>Sao lưu & Phục hồi Dữ liệu CSDL (YCHT02)</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Xuất dữ liệu an toàn toàn bộ các bảng trong CSDL ENERGY STORE ra file JSON để lưu trữ dự phòng.
+          </p>
+          <button class="btn btn-success" onclick="AdminModule.createBackup()">💾 Tiến hành Sao Lưu Dữ Liệu Ngay</button>
+          <div id="backup-result" style="margin-top: 1rem;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALS CONTAINER -->
+
+  <!-- Modal In Hóa đơn K80 -->
+  <div id="modal-receipt" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">Hóa đơn nhiệt K80 (BM01)</div>
+        <button class="modal-close" onclick="App.closeModal('modal-receipt')">&times;</button>
+      </div>
+
+      <div id="receipt-preview-content">
+        <!-- Rendered by pos.js -->
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <button class="btn btn-primary" style="flex: 1;" onclick="POS.printReceipt()">🖨️ In Hóa Đơn K80</button>
+        <button class="btn btn-secondary" onclick="App.closeModal('modal-receipt')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Thêm nhanh Khách hàng -->
+  <div id="modal-customer" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 420px;">
+      <div class="modal-header">
+        <div class="modal-title">Thêm Khách Hàng Mới</div>
+        <button class="modal-close" onclick="App.closeModal('modal-customer')">&times;</button>
+      </div>
+      <form onsubmit="CustomerModule.handleSubmitNew(event)">
+        <div class="form-group">
+          <label class="form-label">Họ và tên *</label>
+          <input type="text" id="cust-name-input" class="form-control" required placeholder="Họ tên khách hàng...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số điện thoại *</label>
+          <input type="text" id="cust-phone-input" class="form-control" required placeholder="090...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="cust-email-input" class="form-control" placeholder="email@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Địa chỉ</label>
+          <input type="text" id="cust-address-input" class="form-control" placeholder="Quận / Huyện...">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Lưu Khách Hàng</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Thêm Sản Phẩm Mới -->
+  <div id="modal-product" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="prod-modal-title">Thêm Sản Phẩm Mới</div>
+        <button class="modal-close" onclick="App.closeModal('modal-product')">&times;</button>
+      </div>
+      <form onsubmit="ProductModule.handleSubmit(event)">
+        <input type="hidden" id="prod-id-input">
+        <div class="form-group">
+          <label class="form-label">Tên sản phẩm dụng cụ thể thao *</label>
+          <input type="text" id="prod-name-input" class="form-control" required placeholder="VD: Vợt cầu lông Yonex...">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Danh mục *</label>
+            <select id="prod-cat-input" class="form-control" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Thương hiệu *</label>
+            <select id="prod-brand-input" class="form-control" required></select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Giá nhập vốn *</label>
+            <input type="number" id="prod-cost-input" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá bán lẻ (&lt;10) *</label>
+            <input type="number" id="prod-retail-input" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Giá bán sỉ (&ge;10) *</label>
+            <input type="number" id="prod-wholesale-input" class="form-control" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Số lượng tồn kho ban đầu</label>
+            <input type="number" id="prod-stock-input" class="form-control" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Đơn vị tính</label>
+            <input type="text" id="prod-unit-input" class="form-control" value="Cái">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Lưu Sản Phẩm</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Lập Phiếu Nhập Kho -->
+  <div id="modal-receipt-create" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <div class="modal-title">Lập Phiếu Nhập Kho (BM02)</div>
+        <button class="modal-close" onclick="App.closeModal('modal-receipt-create')">&times;</button>
+      </div>
+      <form onsubmit="InventoryModule.handleSubmitCreate(event)">
+        <div class="form-group">
+          <label class="form-label">Nhà cung cấp *</label>
+          <select id="receipt-supplier-select" class="form-control" required></select>
+        </div>
+
+        <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; margin-bottom: 0.75rem;">
+          <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.5rem;">Danh sách sản phẩm nhập</div>
+          <div id="receipt-items-container">
+            <!-- Row of items -->
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="InventoryModule.addItemRow()">+ Thêm dòng sản phẩm</button>
+        </div>
+
+        <div class="summary-line" style="font-weight: 800; font-size: 1.1rem; margin-bottom: 0.75rem;">
+          <span>Tổng giá trị phiếu nhập:</span>
+          <span id="receipt-total-value" style="color: var(--primary);">0 đ</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ghi chú</label>
+          <input type="text" id="receipt-note-input" class="form-control" placeholder="Ghi chú đợt hàng...">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Xác nhận lập phiếu nhập</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Thêm Nhân viên Mới -->
+  <div id="modal-user" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">Thêm Tài Khoản Nhân Viên</div>
+        <button class="modal-close" onclick="App.closeModal('modal-user')">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.handleSubmitUser(event)">
+        <div class="form-group">
+          <label class="form-label">Họ và tên *</label>
+          <input type="text" id="user-name-input" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Số điện thoại *</label>
+          <input type="text" id="user-phone-input" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên đăng nhập *</label>
+          <input type="text" id="user-username-input" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu ban đầu *</label>
+          <input type="password" id="user-password-input" class="form-control" required value="123456">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vai trò chức vụ *</label>
+          <select id="user-role-select" class="form-control" required>
+            <option value="1">Giám đốc</option>
+            <option value="2">Thu ngân</option>
+            <option value="3">Thủ kho</option>
+            <option value="4">Kế toán</option>
+            <option value="5">Quản trị viên</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Tạo Tài Khoản</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Hidden Print Area for Native K80 Hardware Printing -->
+  <div id="print-area"></div>
+
+  <!-- Application JS Scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/pos.js"></script>
+  <script src="js/inventory.js"></script>
+  <script src="js/cod.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
+

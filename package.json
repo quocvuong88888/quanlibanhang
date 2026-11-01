@@ -1,0 +1,31 @@
+{
+  "name": "energy-sports-pos",
+  "version": "1.0.0",
+  "description": "Hệ thống Quản lý Bán hàng Dụng cụ Thể thao ENERGY - ĐH Sư Phạm TP.HCM",
+  "main": "main.js",
+  "scripts": {
+    "start": "node server.js",
+    "desktop": "electron .",
+    "electron": "electron .",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "pos",
+    "energy",
+    "sales-management",
+    "sports-store",
+    "hcmue"
+  ],
+  "author": "Nhóm ENERGY - Khoa CNTT HCMUE",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "electron": "^45.2.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mssql": "^12.7.13",
+    "sqlite3": "^5.1.7"
+  }
+}

@@ -1,0 +1,144 @@
+/* CSS Định dạng in Hóa đơn nhiệt K80 (80mm) và Phiếu In Nghiệp Vụ */
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 78mm;
+    margin: 0;
+    padding: 2mm;
+    font-family: 'Courier New', Courier, monospace, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #000;
+    background: #fff;
+    font-size: 12px;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+.k80-receipt {
+  width: 78mm;
+  margin: 0 auto;
+  padding: 10px;
+  background: #fff;
+  font-family: 'Courier New', Courier, monospace, sans-serif;
+  color: #111;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.k80-receipt .header {
+  text-align: center;
+  border-bottom: 1px dashed #000;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.k80-receipt .brand-title {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.k80-receipt .store-info {
+  font-size: 10.5px;
+  margin-top: 3px;
+  color: #333;
+}
+
+.k80-receipt .doc-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 8px 0 4px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.k80-receipt .meta-table {
+  width: 100%;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.k80-receipt .meta-table td {
+  padding: 1px 0;
+}
+
+.k80-receipt .items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  font-size: 11px;
+}
+
+.k80-receipt .items-table th {
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  padding: 4px 1px;
+  text-align: left;
+}
+
+.k80-receipt .items-table td {
+  padding: 3px 1px;
+  vertical-align: top;
+}
+
+.k80-receipt .items-table .text-right {
+  text-align: right;
+}
+
+.k80-receipt .items-table .text-center {
+  text-align: center;
+}
+
+.k80-receipt .summary-section {
+  border-top: 1px dashed #000;
+  padding-top: 6px;
+  font-size: 11.5px;
+}
+
+.k80-receipt .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+
+.k80-receipt .summary-row.total-row {
+  font-size: 14px;
+  font-weight: bold;
+  border-top: 1px solid #000;
+  border-bottom: 1px solid #000;
+  padding: 4px 0;
+  margin: 4px 0;
+}
+
+.k80-receipt .footer {
+  text-align: center;
+  border-top: 1px dashed #000;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 10.5px;
+}
+
+.k80-receipt .barcode-sim {
+  margin: 6px auto;
+  text-align: center;
+  font-family: monospace;
+  font-size: 14px;
+  letter-spacing: 4px;
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  padding: 2px 0;
+  display: inline-block;
+}
+
